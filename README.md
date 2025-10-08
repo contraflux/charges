@@ -1,2 +1,2 @@
-# vector fields
-Electron app to display 2D vector fields.
+# charges
+Electron app to display the electric field caused by charges.
