@@ -14,7 +14,7 @@ import { divergence, curl } from "./util/math.js"
 import { range } from "./util/arrays.js";
 import { drawGrid, drawScalarField, drawVectorField, drawCharges } from "./util/plotting.js";
 import { log, pixelsToCoords, light, coordsToPixels } from "./util/utilities.js";
-import { electricField, electricForce, updateCharges } from "./util/physics.js";
+import { electricField, updateCharges } from "./util/physics.js";
 
 export const fieldContainer = new FieldContainer('canvas');
 const canvas = fieldContainer.canvas;
@@ -94,7 +94,7 @@ function getInputs() {
     const time = document.getElementById('time');
 
     fieldContainer.overlay = overlay;
-    time.innerText = fieldContainer.elapsedTime.toFixed(1) + "s";
+    time.innerText = (fieldContainer.elapsedTime % 10).toFixed(2) + "s";
 
     return [timeScale, isNormalized, arrowScale, startColor, endColor, arrowDensity];
 }
