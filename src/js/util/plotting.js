@@ -186,6 +186,9 @@ export function drawVectorField(fieldContainer, xs, ys, func, start_color, end_c
             if (isNormalized) {
                 x_dot /= length;
                 y_dot /= length;
+            } else {
+                x_dot /= reference;
+                y_dot /= reference;
             }
 
             // Location of the vector head
