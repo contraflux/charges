@@ -158,10 +158,14 @@ export function drawVectorField(fieldContainer, xs, ys, func, start_color, end_c
     }
 
     // Assign each vector to a color in the color range based on its length
-    const lengths = vectorField.map((v) => Math.hypot(...v));
-    const max_length = Math.max(...lengths);
+    const lengths = vectorField.map((v) => Math.hypot(...v)); // Length of each vector
+    const sorted_lengths = [...lengths];
+    sorted_lengths.sort((a, b) => a - b); // Sort in ascending order
+    const reference = sorted_lengths[parseInt(sorted_lengths.length * (9/10))]; // Get the 90th percentile value
     for (const l of lengths) {
-        const rgb = colorLerp(start_color, end_color, l / max_length);
+        let s = l / reference;
+        s = s > 1 ? 1 : s; // If the length is over 90th percentile, draw as the final color
+        const rgb = colorLerp(start_color, end_color, s);
         colors.push(`rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 1)`);
     }
 
