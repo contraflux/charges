@@ -20,21 +20,6 @@ export const fieldContainer = new FieldContainer('canvas');
 const canvas = fieldContainer.canvas;
 const ctx = fieldContainer.ctx;
 
-// fieldContainer.chargeList = [
-//     new Charge(-2.5, 0, 0, -0.316227766, -1),
-//     new Charge(2.5, 0, 0, 0.316227766, 1),
-// ];
-
-// Capacitor
-for (let y = -5; y <= 5; y += 0.125) {
-    const q1 = new Charge(-2, y, 0, 0, -1);
-    const q2 = new Charge(2, y, 0, 0, 1);
-    q1.isLocked = true;
-    q2.isLocked = true;
-    fieldContainer.chargeList.push(q1);
-    fieldContainer.chargeList.push(q2);
-}
-
 /**
  * Periodic function that runs every tick and contains most drawing and calculation
  */
@@ -180,6 +165,40 @@ function executeDragging(e) {
 function editProperties(e) {
     // TODO: Open a window when a charge is double clicked where you can edit
     // velocity, charge, and if it is locked or not. See circuits project for inspiration.
+    const dragRadius = 25;
+    const rect = canvas.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+
+    for (const charge of fieldContainer.chargeList) {
+        const [w, h] = coordsToPixels(charge.x, charge.y);
+
+        if (Math.hypot(w - mouseX, h - mouseY) < dragRadius) {
+            showInputBox(charge);
+        }
+    }
+}
+
+/**
+ * Show the input box to edit charge properties
+ * 
+ * @param {Charge} charge - The charge to be edited
+ */
+function showInputBox(charge) {
+    const inputBox = document.getElementById('input-box');
+    const inputValue1 = document.getElementById('input-value-1'); // Velocity X
+    const inputValue2 = document.getElementById('input-value-2'); // Velocity Y
+    const inputValue3 = document.getElementById('input-value-3'); // Charge
+    const inputValue4 = document.getElementById('input-value-4'); // Locked
+
+    inputBox.style.visibility = "visible";
+
+    inputValue1.value = charge.v_x;
+    inputValue2.value = charge.v_y;
+    inputValue3.value = charge.q;
+    inputValue4.checked = charge.isLocked;
+
+    fieldContainer.editing = charge;
 }
 
 canvas.addEventListener('mousedown', (e) => { checkDragging(e) });
@@ -198,6 +217,25 @@ document.getElementById('add-charge').addEventListener('click', () => {
 
 document.getElementById('play-pause').addEventListener('click', () => {
     fieldContainer.dt = fieldContainer.dt !== 0 ? 0 : 1;
+});
+
+document.getElementById('accept').addEventListener('click', () => {
+    const inputBox = document.getElementById('input-box');
+    const inputValue1 = document.getElementById('input-value-1'); // Velocity X
+    const inputValue2 = document.getElementById('input-value-2'); // Velocity Y
+    const inputValue3 = document.getElementById('input-value-3'); // Charge
+    const inputValue4 = document.getElementById('input-value-4'); // Locked
+
+    inputBox.style.visibility = "hidden";
+
+    fieldContainer.editing.v_x = parseFloat(inputValue1.value);
+    fieldContainer.editing.v_y = parseFloat(inputValue2.value);
+    fieldContainer.editing.q = parseFloat(inputValue3.value);
+    fieldContainer.editing.isLocked = inputValue4.checked;
+});
+
+document.getElementById('cancel').addEventListener('click', () => {
+    document.getElementById('input-box').style.visibility = "hidden";
 });
 
 setInterval(appPeriodic, 10);

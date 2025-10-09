@@ -40,9 +40,7 @@ body {
     color: var(--light);
     background-color: var(--shadow);
     box-sizing: border-box;
-    border-style: solid;
-    border-color: var(--light);
-    border-width: 1px;
+    border: 1px solid var(--light);
     transition: all 0.4s ease;
     display: flex;
     justify-content: center;
@@ -181,4 +179,70 @@ body {
     color: var(--light);
     font-size: 18px;
     padding-left: 30px; padding-right: 30px;
+}
+
+.input-box {
+    visibility: hidden;
+    position: absolute;
+    top: calc(120px + 250px - 100px); left: calc(450px - 125px);
+    box-sizing: border-box;
+    border-radius: 25px;
+    background-color: var(--panel);
+    border: 1px solid var(--light);
+    height: 170px;
+    width: 250px;
+    box-shadow: 0 0 10px 10px var(--shadow);
+    overflow: hidden;
+}
+
+.input-box-entry {
+    margin: auto;
+    margin-bottom: -10px;
+    width: 210px; height: 40px;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+}
+
+.input-box-entry>h3 {
+    width: 145px;
+    float: left;
+    font-size: 16px;
+    color: var(--light);
+}
+
+.input-box-entry>input {
+    width: 75px;
+    float: left;
+    color-scheme: dark ;
+    color: var(--light);
+    background-color: var(--panel);
+    border-width: 1px;
+    border-color: var(--light);
+    border-style: solid;
+    border-radius: 10px;
+    display: border-box;
+}
+
+.input-box-bottom {
+    position: relative;
+    bottom: -5px;
+    margin: auto;
+    width: 200px; height: 45px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.input-box-button {
+    position: relative;
+    width: 90px; height: 30px;
+    color: var(--light);
+    background-color: var(--shadow);
+    box-sizing: border-box;
+    border: 1px solid var(--light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
 }

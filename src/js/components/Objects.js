@@ -27,9 +27,10 @@ export class FieldContainer extends Container {
         this.zoomSpeed = 2e-3;
         this.overlay = "none";
         this.chargeList = [];
-        this.dt = 0.1;
+        this.dt = 0;
         this.elapsedTime = 0;
         this.colorOffset = 0;
+        this.editing = null;
     }
 
     resetFields() {

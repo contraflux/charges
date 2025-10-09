@@ -237,7 +237,7 @@ export function drawCharges(fieldContainer) {
 
         // Plot a circle at the charge's position
         ctx.beginPath();
-        ctx.arc(x, y, 5, 0, 2 * Math.PI);
+        ctx.arc(x, y, 7.5, 0, 2 * Math.PI);
         ctx.fill()
     }
 }
