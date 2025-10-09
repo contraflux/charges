@@ -34,7 +34,7 @@ export function electricField(fieldContainer, x, y) {
         const dx_hat = dx / r;
         const dy_hat = dy / r;
 
-        const k = 1;
+        const k = 8.99e9;
 
         E_x += k * charge.q * dx_hat / Math.pow(r, 2);
         E_y += k * charge.q * dy_hat / Math.pow(r, 2);
@@ -67,7 +67,7 @@ export function electricForce(fieldContainer, charge, x, y) {
         const dx_hat = dx / r;
         const dy_hat = dy / r;
 
-        const k = 1;
+        const k = 8.99e9;
 
         F_x += k * charge.q * other_charge.q * dx_hat / Math.pow(r, 2);
         F_y += k * charge.q * other_charge.q * dy_hat / Math.pow(r, 2);

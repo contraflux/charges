@@ -69,7 +69,7 @@ function appPeriodic() {
  *                  fields, and the grid for scalar fields
  */
 function getInputs() {
-    const timeScale = document.getElementById('time-scale').value;
+    const timeScale = Math.pow(10, document.getElementById('time-scale').value - 7); // Log scale from 1e-7 to 1e-5
     const isNormalized = document.getElementById('normalize-tick').checked;
     const arrowScale = document.getElementById('arrow-scale').value;
     const startColor = document.getElementById('start-color').value;
@@ -79,7 +79,7 @@ function getInputs() {
     const time = document.getElementById('time');
 
     fieldContainer.overlay = overlay;
-    time.innerText = (fieldContainer.elapsedTime % 10).toFixed(2) + "s";
+    time.innerText = ((fieldContainer.elapsedTime * 1e3) % 10).toFixed(3) + " ms";
 
     return [timeScale, isNormalized, arrowScale, startColor, endColor, arrowDensity];
 }
