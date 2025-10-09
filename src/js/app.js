@@ -211,8 +211,16 @@ document.addEventListener('keypress', (e) => {
     if (e.key == 'r') fieldContainer.resetFields();
 });
 
-document.getElementById('add-charge').addEventListener('click', () => {
+document.getElementById('add-positive-charge').addEventListener('click', () => {
     fieldContainer.chargeList.push(new Charge((Math.random() - 0.5) * 10, (Math.random() - 0.5) * 10, 0, 0, 1));
+});
+
+document.getElementById('add-negative-charge').addEventListener('click', () => {
+    fieldContainer.chargeList.push(new Charge((Math.random() - 0.5) * 10, (Math.random() - 0.5) * 10, 0, 0, -1));
+});
+
+document.getElementById('restart').addEventListener('click', () => {
+    fieldContainer.chargeList = [];
 });
 
 document.getElementById('play-pause').addEventListener('click', () => {
