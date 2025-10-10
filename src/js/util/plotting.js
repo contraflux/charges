@@ -18,7 +18,7 @@ import { map } from "./math.js"
  * @param {FieldContainer} fieldContainer - The app container
  */
 export function drawGrid(fieldContainer) {
-    const ctx = fieldContainer.ctx;23
+    const ctx = fieldContainer.ctx;
     const gridSpacing = Math.pow(5, Math.ceil(log(50 / fieldContainer.coordScale, 5)));
 
     // Canvas bounds
