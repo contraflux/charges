@@ -1,10 +1,10 @@
 /**
- * Objects
+ * Container
  * 
  * Classes for organizing content needed across scripts
  * 
  * @author contraflux
- * @date 10/8/2025
+ * @date 10/10/2025
  */
 
 class Container {
@@ -61,13 +61,3 @@ export class FieldContainer extends Container {
     }
 }
 
-export class Charge {
-    constructor(x, y, v_x, v_y, q) {
-        this.x = x;
-        this.y = y;
-        this.v_x = v_x;
-        this.v_y = v_y;
-        this.q = q;
-        this.isLocked = false;
-    }
-}

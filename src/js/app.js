@@ -9,7 +9,8 @@
  * @date 10/8/2025
  */
 
-import { FieldContainer, Charge } from "./components/Objects.js"
+import { FieldContainer } from "./components/Objects.js"
+import { Charge } from "./components/Charge.js";
 import { divergence, curl } from "./util/math.js"
 import { range } from "./util/arrays.js";
 import { drawGrid, drawScalarField, drawVectorField, drawCharges } from "./util/plotting.js";
