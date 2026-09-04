@@ -9,16 +9,19 @@
 </head>
 
 <body>
+    <div class="header">
+        <a href="https://echotops.github.io/software">← Back to Software</a>
+    </div>
     <div class="input-container">
         <div class="container-row">
             <div class="action-button" id="add-positive-charge">
                 <h3 style="margin-top: 2px">+</h3>
             </div>
             <div class="action-button" id="add-negative-charge">
-                <h3>-</h3>
+                <h3 style="margin-top: 2px">-</h3>
             </div>
             <div class="action-button" id="restart">
-                <h3>↺</h3>
+                <h3 style="margin-top: 4px">↺</h3>
             </div>
             <div class="action-button" id="play-pause">
                 <h3 style="margin-top: 2px">⏯</h3>
@@ -78,11 +81,13 @@
         </div>
     </div>
 
-    <canvas class="canvas" id="canvas"></canvas>
-    <div class="probe-layer" id="probe-layer"></div>
+    <div class="canvas-container">
+        <canvas class="canvas" id="canvas"></canvas>
+        <div class="probe-layer" id="probe-layer"></div>
 
-    <div class="time-box">
-        <h3 id="time">Time</h3>
+        <div class="time-box">
+            <h3 id="time">Time</h3>
+        </div>
     </div>
 
     <div class="input-box" id="input-box">
