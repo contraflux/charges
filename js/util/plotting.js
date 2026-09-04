@@ -326,5 +326,64 @@ export function drawCharges(fieldContainer) {
         ctx.beginPath();
         ctx.arc(x, y, 7.5, 0, 2 * Math.PI);
         ctx.fill()
+
+        // Ring around the charge while it's being dragged or edited
+        if (charge === fieldContainer.dragging || charge === fieldContainer.editing) {
+            ctx.strokeStyle = light;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(x, y, 11, 0, 2 * Math.PI);
+            ctx.stroke();
+        }
+    }
+}
+
+/**
+ * Draws the field probe marker: a dot at the probe point and an arrow
+ * showing the field direction there. The magnitude/potential readout is
+ * rendered separately as an HTML box (see app.js), not on the canvas
+ *
+ * @param {FieldContainer} fieldContainer - The app container
+ * @param {float} x - The x coordinate of the probe
+ * @param {float} y - The y coordinate of the probe
+ * @param {array} field - The [x, y] electric field at the probe
+ */
+const probeColor = "#7c98ff";
+
+export function drawProbe(fieldContainer, x, y, field) {
+    const ctx = fieldContainer.ctx;
+    const [E_x, E_y] = field;
+    const magnitude = Math.hypot(E_x, E_y);
+
+    const [tailWidth, tailHeight] = coordsToPixels(x, y);
+
+    ctx.fillStyle = probeColor;
+    ctx.beginPath();
+    ctx.arc(tailWidth, tailHeight, 3, 0, 2 * Math.PI);
+    ctx.fill();
+
+    if (magnitude > 0 && isFinite(magnitude)) {
+        const arrowLength = 40;
+        const dirX = E_x / magnitude;
+        const dirY = E_y / magnitude;
+        const headWidth = tailWidth + (dirX * arrowLength);
+        const headHeight = tailHeight - (dirY * arrowLength);
+
+        ctx.strokeStyle = probeColor;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(tailWidth, tailHeight);
+        ctx.lineTo(headWidth, headHeight);
+        ctx.stroke();
+
+        ctx.save();
+        ctx.translate(headWidth, headHeight);
+        ctx.rotate(Math.atan2(dirX, dirY));
+        ctx.beginPath();
+        ctx.moveTo(6, 6);
+        ctx.lineTo(0, 0);
+        ctx.lineTo(-6, 6);
+        ctx.fill();
+        ctx.restore();
     }
 }

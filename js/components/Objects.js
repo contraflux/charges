@@ -30,6 +30,11 @@ export class FieldContainer extends Container {
         this.elapsedTime = 0;
         this.colorOffset = 0;
         this.editing = null;
+        this.selected = null;
+        this.isProbing = false;
+        this.probeX = 0;
+        this.probeY = 0;
+        this.probePoints = [];
     }
 
     resetFields() {
@@ -37,10 +42,15 @@ export class FieldContainer extends Container {
         this.offsetX = 0;
         this.offsetY = 0;
         this.isDragging = false;
+        this.dragging = null;
         this.mouseOffsetX = 0;
         this.mouseOffsetY = 0;
         this.initialLocations = [];
+        this.chargeList = [];
         this.elapsedTime = 0;
+        this.editing = null;
+        this.selected = null;
+        this.probePoints = [];
     }
 
     dragGrid(e) {

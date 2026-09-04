@@ -12,7 +12,7 @@
 import { FieldContainer } from "./components/Objects.js"
 import { Charge } from "./components/Charge.js";
 import { range } from "./util/arrays.js";
-import { drawGrid, drawVectorField, drawCharges, drawEquipotentialLines } from "./util/plotting.js";
+import { drawGrid, drawVectorField, drawCharges, drawEquipotentialLines, drawProbe } from "./util/plotting.js";
 import { log, pixelsToCoords, light, coordsToPixels } from "./util/utilities.js";
 import { µ, electricField, electricPotential, updateCharges } from "./util/physics.js";
 import { dipole, quadrupole, line, circle } from "./util/generation.js";
@@ -25,7 +25,7 @@ const ctx = fieldContainer.ctx;
  * Periodic function that runs every tick and contains most drawing and calculation
  */
 function appPeriodic() {
-    const [timeScale, isNormalized, arrowScale, startColor, endColor, arrowDensity, isEquipotential] = getInputs();
+    const [timeScale, isNormalized, arrowScale, startColor, endColor, arrowDensity, isEquipotential, isProbe] = getInputs();
     const [step, xs, ys, scalar_xs, scalar_ys] = getGrid(arrowDensity);
 
     canvas.width = canvas.clientWidth;
@@ -52,11 +52,165 @@ function appPeriodic() {
 
     drawCharges(fieldContainer);
 
+    updateProbeBoxes(isProbe);
+
     if (fieldContainer.dt != 0 ) {
         updateCharges(fieldContainer);
     }
 
     fieldContainer.elapsedTime += fieldContainer.dt;
+}
+
+// Persistent DOM state for probe boxes, keyed by pinned point (plus one for the
+// live hover probe). Kept across ticks instead of rebuilt, so a box the user is
+// about to click on doesn't get replaced out from under their cursor.
+const pinnedProbeBoxes = new Map(); // point -> { box, shifted, lockedUntil }
+let hoverProbeBox = null;
+
+// Must match .probe-box's transform transition duration in index.css, so a
+// shift can't be re-triggered (and re-target mid-flight) before it finishes
+const PROBE_SHIFT_TRANSITION_MS = 150;
+
+/**
+ * Builds an empty probe info box: an HTML overlay positioned over the canvas,
+ * with placeholder field/potential lines to be filled in by updateProbeBox.
+ * Pinned points get a close button; the live hover probe does not
+ *
+ * @param {function|null} onClose - Called when the close button is clicked, or null to omit it
+ * @returns {HTMLElement} The probe box element
+ */
+function createProbeBox(onClose) {
+    const box = document.createElement('div');
+    box.className = 'probe-box';
+
+    if (onClose) {
+        const close = document.createElement('span');
+        close.className = 'probe-box-close';
+        close.innerHTML = '&times;';
+        close.addEventListener('click', onClose);
+        box.appendChild(close);
+    }
+
+    const eLine = document.createElement('div');
+    eLine.className = 'probe-box-e';
+    const vLine = document.createElement('div');
+    vLine.className = 'probe-box-v';
+    box.appendChild(eLine);
+    box.appendChild(vLine);
+
+    return box;
+}
+
+/**
+ * Updates an existing probe box's position and readout in place
+ *
+ * @param {HTMLElement} box - A box created by createProbeBox
+ * @param {float} x - The x coordinate of the probe
+ * @param {float} y - The y coordinate of the probe
+ * @param {array} field - The [x, y] electric field at the probe
+ * @param {float} potential - The electric potential at the probe
+ * @param {boolean} shifted - Render below-left of the point instead of above-right, so the
+ *                            box doesn't sit on top of a charge being dragged past it
+ */
+function updateProbeBox(box, x, y, field, potential, shifted) {
+    const magnitude = Math.hypot(field[0], field[1]);
+    const [pixelX, pixelY] = coordsToPixels(x, y);
+
+    box.style.left = `${pixelX}px`;
+    box.style.top = `${pixelY}px`;
+    box.classList.toggle('shifted', shifted);
+    box.querySelector('.probe-box-e').textContent = `E = ${magnitude.toExponential(2)} N/C`;
+    box.querySelector('.probe-box-v').textContent = `V = ${potential.toExponential(2)} V`;
+}
+
+/**
+ * Whether a screen point falls within (or near) an element's current rect
+ *
+ * @param {float} viewportX - The point's x coordinate in viewport space
+ * @param {float} viewportY - The point's y coordinate in viewport space
+ * @param {HTMLElement} el - The element to test against
+ * @param {float} margin - Extra padding around the element's rect
+ * @returns {boolean} Whether the point is inside the padded rect
+ */
+function pointNearElement(viewportX, viewportY, el, margin) {
+    const rect = el.getBoundingClientRect();
+    return viewportX > rect.left - margin && viewportX < rect.right + margin &&
+           viewportY > rect.top - margin && viewportY < rect.bottom + margin;
+}
+
+/**
+ * Draws every active probe marker (the live hover probe and any pinned
+ * points) on the canvas and syncs their HTML info boxes
+ *
+ * @param {boolean} isProbe - Whether the Probe checkbox is enabled
+ */
+function updateProbeBoxes(isProbe) {
+    const probeLayer = document.getElementById('probe-layer');
+    probeLayer.style.left = `${canvas.offsetLeft}px`;
+    probeLayer.style.top = `${canvas.offsetTop}px`;
+    probeLayer.style.width = `${canvas.offsetWidth}px`;
+    probeLayer.style.height = `${canvas.offsetHeight}px`;
+
+    if (isProbe && fieldContainer.isProbing) {
+        const field = electricField(fieldContainer, fieldContainer.probeX, fieldContainer.probeY);
+        const potential = electricPotential(fieldContainer, fieldContainer.probeX, fieldContainer.probeY);
+        drawProbe(fieldContainer, fieldContainer.probeX, fieldContainer.probeY, field);
+
+        if (!hoverProbeBox) {
+            hoverProbeBox = createProbeBox(null);
+            probeLayer.appendChild(hoverProbeBox);
+        }
+        updateProbeBox(hoverProbeBox, fieldContainer.probeX, fieldContainer.probeY, field, potential, false);
+    } else if (hoverProbeBox) {
+        hoverProbeBox.remove();
+        hoverProbeBox = null;
+    }
+
+    const dragged = fieldContainer.dragging;
+    const dragViewport = dragged == null ? null : (() => {
+        const canvasRect = canvas.getBoundingClientRect();
+        const [pixelX, pixelY] = coordsToPixels(dragged.x, dragged.y);
+        return [canvasRect.left + pixelX, canvasRect.top + pixelY];
+    })();
+
+    const seen = new Set();
+
+    for (const point of fieldContainer.probePoints) {
+        seen.add(point);
+
+        let entry = pinnedProbeBoxes.get(point);
+        if (!entry) {
+            const box = createProbeBox(() => {
+                fieldContainer.probePoints = fieldContainer.probePoints.filter((p) => p !== point);
+            });
+            entry = { box, shifted: false, lockedUntil: 0 };
+            pinnedProbeBoxes.set(point, entry);
+            probeLayer.appendChild(box);
+        }
+
+        const field = electricField(fieldContainer, point.x, point.y);
+        const potential = electricPotential(fieldContainer, point.x, point.y);
+        drawProbe(fieldContainer, point.x, point.y, field);
+
+        if (dragViewport == null) {
+            entry.shifted = false;
+            entry.lockedUntil = 0;
+        } else if (performance.now() >= entry.lockedUntil && pointNearElement(dragViewport[0], dragViewport[1], entry.box, 12)) {
+            // The dragged charge is about to pass under the box's current spot — hop to the other corner,
+            // and lock out further hops until this one finishes animating
+            entry.shifted = !entry.shifted;
+            entry.lockedUntil = performance.now() + PROBE_SHIFT_TRANSITION_MS;
+        }
+
+        updateProbeBox(entry.box, point.x, point.y, field, potential, entry.shifted);
+    }
+
+    for (const [point, entry] of pinnedProbeBoxes) {
+        if (!seen.has(point)) {
+            entry.box.remove();
+            pinnedProbeBoxes.delete(point);
+        }
+    }
 }
 
 /**
@@ -73,11 +227,12 @@ function getInputs() {
     const endColor = document.getElementById('end-color').value;
     const arrowDensity = document.getElementById('arrow-density').value;
     const isEquipotential = document.getElementById('equipotential-tick').checked;
+    const isProbe = document.getElementById('probe-tick').checked;
     const time = document.getElementById('time');
 
     time.innerText = (fieldContainer.elapsedTime % 10).toFixed(2) + " s";
 
-    return [timeScale, isNormalized, arrowScale, startColor, endColor, arrowDensity, isEquipotential];
+    return [timeScale, isNormalized, arrowScale, startColor, endColor, arrowDensity, isEquipotential, isProbe];
 }
 
 /**
@@ -117,22 +272,46 @@ function checkDragging(e) {
     const mouseX = e.clientX - rect.left;
     const mouseY = e.clientY - rect.top;
 
+    fieldContainer.selected = null;
+
     for (const charge of fieldContainer.chargeList) {
         const [w, h] = coordsToPixels(charge.x, charge.y);
 
         if (Math.hypot(w - mouseX, h - mouseY) < dragRadius) {
             fieldContainer.dragging = charge;
+            fieldContainer.selected = charge;
         }
     }
 
     if (fieldContainer.dragging == null) {
-        fieldContainer.isDragging = true;
+        if (document.getElementById('probe-tick').checked) {
+            const [x, y] = pixelsToCoords(mouseX, mouseY);
+            fieldContainer.probePoints.push({ x, y });
+        } else {
+            fieldContainer.isDragging = true;
+        }
     }
 }
 
 /**
+ * Track the cursor position (in world coordinates) for the field probe
+ *
+ * @param {MouseEvent} e - The mouse event
+ */
+function updateProbe(e) {
+    const rect = canvas.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+    const [x, y] = pixelsToCoords(mouseX, mouseY);
+
+    fieldContainer.probeX = x;
+    fieldContainer.probeY = y;
+    fieldContainer.isProbing = true;
+}
+
+/**
  * Drag a point charge or the grid axes
- * 
+ *
  * @param {MouseEvent} e - The mouse event
  */
 function executeDragging(e) {
@@ -177,7 +356,7 @@ function editProperties(e) {
 
 /**
  * Show the input box to edit charge properties
- * 
+ *
  * @param {Charge} charge - The charge to be edited
  */
 function showInputBox(charge) {
@@ -193,18 +372,58 @@ function showInputBox(charge) {
     inputValue2.value = charge.v_y.toFixed(2);
     inputValue3.value = charge.q/µ;
     inputValue4.checked = charge.isLocked;
+    [inputValue1, inputValue2, inputValue3].forEach((input) => input.classList.remove('input-error'));
 
     fieldContainer.editing = charge;
 }
 
+/**
+ * Checks that every [input, parsedValue] pair holds a finite number,
+ * marking the offending inputs so the user can see what to fix
+ *
+ * @param {array} pairs - Array of [HTMLInputElement, float] pairs
+ * @returns {boolean} Whether every value was valid
+ */
+function validateInputs(pairs) {
+    let valid = true;
+
+    for (const [input, value] of pairs) {
+        if (isFinite(value)) {
+            input.classList.remove('input-error');
+        } else {
+            input.classList.add('input-error');
+            valid = false;
+        }
+    }
+
+    return valid;
+}
+
 canvas.addEventListener('mousedown', (e) => { checkDragging(e) });
-canvas.addEventListener('mousemove', (e) => { executeDragging(e) });
+canvas.addEventListener('mousemove', (e) => { executeDragging(e); updateProbe(e); });
 canvas.addEventListener('mouseup', () => { fieldContainer.isDragging = false; fieldContainer.dragging = null; })
+canvas.addEventListener('mouseleave', () => { fieldContainer.isProbing = false; });
 canvas.addEventListener('wheel', (e) => fieldContainer.zoomGrid(e));
 canvas.addEventListener('dblclick', (e) => { editProperties(e) });
 
 document.addEventListener('keypress', (e) => {
     if (e.key == 'r') fieldContainer.resetFields();
+});
+
+document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Delete' && e.key !== 'Backspace') return;
+    if (document.activeElement.tagName === 'INPUT') return; // Don't hijack editing a text field
+
+    const target = fieldContainer.selected;
+    if (target == null) return;
+
+    fieldContainer.chargeList = fieldContainer.chargeList.filter((charge) => charge !== target);
+    fieldContainer.selected = null;
+
+    if (fieldContainer.editing === target) {
+        fieldContainer.editing = null;
+        document.getElementById('input-box').style.visibility = "hidden";
+    }
 });
 
 document.getElementById('add-positive-charge').addEventListener('click', () => {
@@ -216,8 +435,8 @@ document.getElementById('add-negative-charge').addEventListener('click', () => {
 });
 
 document.getElementById('restart').addEventListener('click', () => {
-    fieldContainer.chargeList = [];
-    fieldContainer.elapsedTime = 0;
+    fieldContainer.resetFields();
+    document.getElementById('input-box').style.visibility = "hidden";
 });
 
 document.getElementById('play-pause').addEventListener('click', () => {
@@ -231,11 +450,19 @@ document.getElementById('accept').addEventListener('click', () => {
     const inputValue3 = document.getElementById('input-value-3'); // Charge
     const inputValue4 = document.getElementById('input-value-4'); // Locked
 
+    const v_x = parseFloat(inputValue1.value);
+    const v_y = parseFloat(inputValue2.value);
+    const q = parseFloat(inputValue3.value);
+
+    if (!validateInputs([[inputValue1, v_x], [inputValue2, v_y], [inputValue3, q]])) {
+        return;
+    }
+
     inputBox.style.visibility = "hidden";
 
-    fieldContainer.editing.v_x = parseFloat(inputValue1.value);
-    fieldContainer.editing.v_y = parseFloat(inputValue2.value);
-    fieldContainer.editing.q = parseFloat(inputValue3.value)*µ;
+    fieldContainer.editing.v_x = v_x;
+    fieldContainer.editing.v_y = v_y;
+    fieldContainer.editing.q = q*µ;
     fieldContainer.editing.isLocked = inputValue4.checked;
     fieldContainer.editing = null;
 });
@@ -311,6 +538,10 @@ function showGenerationBox(shape) {
     document.getElementById('generation-row-count').style.display = config.showCount ? "flex" : "none";
     document.getElementById('generation-row-angle').style.display = config.showAngle ? "flex" : "none";
 
+    for (let i = 1; i <= 6; i++) {
+        document.getElementById(`generation-value-${i}`).classList.remove('input-error');
+    }
+
     document.getElementById('generation-box').style.visibility = "visible";
 }
 
@@ -340,16 +571,29 @@ document.getElementById('line').addEventListener('click', () => showGenerationBo
 document.getElementById('circle').addEventListener('click', () => showGenerationBox('circle'));
 
 document.getElementById('generation-accept').addEventListener('click', () => {
+    const inputs = [1, 2, 3, 4, 5, 6].map((i) => document.getElementById(`generation-value-${i}`));
+    const [input1, input2, input3, input4, input5, input6] = inputs;
+
     const fields = {
-        centerX: parseFloat(document.getElementById('generation-value-1').value),
-        centerY: parseFloat(document.getElementById('generation-value-2').value),
-        count: parseInt(document.getElementById('generation-value-3').value),
-        spacing: parseFloat(document.getElementById('generation-value-4').value),
-        angle: parseFloat(document.getElementById('generation-value-5').value),
-        charge: parseFloat(document.getElementById('generation-value-6').value)
+        centerX: parseFloat(input1.value),
+        centerY: parseFloat(input2.value),
+        count: parseInt(input3.value),
+        spacing: parseFloat(input4.value),
+        angle: parseFloat(input5.value),
+        charge: parseFloat(input6.value)
     };
 
-    generationConfig[pendingShape].fn(fieldContainer, mapGenerationOptions(pendingShape, fields));
+    const config = generationConfig[pendingShape];
+    const pairs = [[input1, fields.centerX], [input2, fields.centerY], [input4, fields.spacing], [input5, fields.angle], [input6, fields.charge]];
+    if (config.showCount) {
+        pairs.push([input3, fields.count]);
+    }
+
+    if (!validateInputs(pairs)) {
+        return;
+    }
+
+    config.fn(fieldContainer, mapGenerationOptions(pendingShape, fields));
 
     document.getElementById('generation-box').style.visibility = "hidden";
 });

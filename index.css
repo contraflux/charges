@@ -270,3 +270,53 @@ body {
     justify-content: space-between;
     align-items: center;
 }
+
+input.input-error {
+    border-color: #e05252;
+}
+
+.probe-layer {
+    position: absolute;
+    pointer-events: none;
+}
+
+.probe-box {
+    position: absolute;
+    transform: translate(8px, calc(-100% - 8px));
+    transition: transform 0.15s ease;
+    pointer-events: auto;
+    box-sizing: border-box;
+    background-color: var(--surface);
+    color: var(--primary);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 34px 6px 8px;
+    font-size: 12px;
+    line-height: 1.4;
+    white-space: nowrap;
+}
+
+.probe-box.shifted {
+    transform: translate(calc(-100% - 8px), 8px);
+}
+
+.probe-box-close {
+    position: absolute;
+    top: 0; right: 0;
+    width: 32px; height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    color: var(--secondary);
+    cursor: pointer;
+}
+
+.probe-box-close:hover {
+    color: var(--primary);
+}
+
+input[type="checkbox"],
+input[type="range"] {
+    accent-color: var(--accent);
+}
