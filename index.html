@@ -11,6 +11,10 @@
 <body>
     <div class="header">
         <a href="https://echotops.github.io/software">← Back to Software</a>
+        <div class="header-button" id="walkthrough-button">
+            Tutorial
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 1.5a4.5 4.5 0 0 0-2.5 8.24c.4.28.6.72.6 1.18v.08h4v-.08c0-.46.2-.9.6-1.18A4.5 4.5 0 0 0 8 1.5Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M6.5 13h3M7 14.5h2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        </div>
     </div>
     <div class="input-container">
         <div class="container-row">
@@ -45,6 +49,9 @@
                 <p>Circle</p>
             </div>
         </div>
+        <div class="scroll-hint">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 6l5 5 5-5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+        </div>
     </div>
 
     <div class="color-container">
@@ -78,6 +85,9 @@
         <div class="container-row">
             <h3>Probe</h3>
             <input type="checkbox" id="probe-tick">
+        </div>
+        <div class="scroll-hint">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 6l5 5 5-5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>
         </div>
     </div>
 
@@ -157,6 +167,21 @@
             </div>
             <div class="input-box-button" id="generation-cancel">
                  <p>Cancel</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="walkthrough-box" id="walkthrough-box">
+        <span class="walkthrough-close" id="walkthrough-close">&times;</span>
+        <h3 id="walkthrough-title">Title</h3>
+        <p id="walkthrough-text">Text</p>
+        <div class="walkthrough-bottom">
+            <div class="input-box-button" id="walkthrough-back">
+                <p>Back</p>
+            </div>
+            <span id="walkthrough-progress">1 / 4</span>
+            <div class="input-box-button" id="walkthrough-next">
+                <p>Next</p>
             </div>
         </div>
     </div>

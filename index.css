@@ -23,15 +23,26 @@ body {
     margin-top: 10px;
     display: flex;
     align-items: center;
+    justify-content: space-between;
 }
 
-.header>a {
+.header>a,
+.header-button {
     color: var(--secondary);
     text-decoration: none;
+    cursor: pointer;
+    user-select: none;
     transition: color 0.4s ease;
 }
 
-.header>a:hover {
+.header-button {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.header>a:hover,
+.header-button:hover {
     color: var(--accent);
 }
 
@@ -49,6 +60,28 @@ body {
     border-radius: 25px;
     display: dark;
     overflow: scroll;
+}
+
+.scroll-hint {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 4px;
+    display: flex;
+    justify-content: center;
+    color: var(--secondary);
+    cursor: pointer;
+    opacity: 1;
+    transition: opacity 0.3s ease, color 0.4s ease;
+}
+
+.scroll-hint:hover {
+    color: var(--accent);
+}
+
+.scroll-hint.hidden {
+    opacity: 0;
+    pointer-events: none;
 }
 
 .action-button {
@@ -346,4 +379,56 @@ input.input-error {
 input[type="checkbox"],
 input[type="range"] {
     accent-color: var(--accent);
+}
+
+.walkthrough-box {
+    visibility: hidden;
+    position: absolute;
+    top: calc(120px + 250px - 150px); left: calc(50% - 180px);
+    box-sizing: border-box;
+    border-radius: 25px;
+    background-color: var(--surface);
+    border: 1px solid var(--border);
+    width: 360px;
+    padding: 20px;
+    color: var(--primary);
+}
+
+.walkthrough-box>h3 {
+    margin: 0 0 10px 0;
+    padding-right: 20px;
+    font-size: 18px;
+}
+
+.walkthrough-box>p {
+    margin: 0;
+    min-height: 80px;
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--secondary);
+}
+
+.walkthrough-close {
+    position: absolute;
+    top: 10px; right: 14px;
+    font-size: 20px;
+    color: var(--secondary);
+    cursor: pointer;
+    transition: color 0.4s ease;
+}
+
+.walkthrough-close:hover {
+    color: var(--primary);
+}
+
+.walkthrough-bottom {
+    margin-top: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.walkthrough-bottom>span {
+    font-size: 13px;
+    color: var(--secondary);
 }

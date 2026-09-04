@@ -613,4 +613,93 @@ document.getElementById('generation-cancel').addEventListener('click', () => {
     document.getElementById('generation-box').style.visibility = "hidden";
 });
 
+/**
+ * Steps shown by the walkthrough, in order
+ *
+ * @type {array}
+ */
+const walkthroughSteps = [
+    {
+        title: "Charges",
+        text: "Click + or − to add a positive or negative charge. Drag a charge to move it, or double-click it to edit its velocity, charge, and whether it's locked in place. Click a charge once to select it, then press Delete or Backspace to remove it."
+    },
+    {
+        title: "Navigating the Canvas",
+        text: "Drag empty space to pan the view, and scroll to zoom in or out. Press ▶| to start or pause the simulation, and ↺ (or the 'r' key) to reset everything."
+    },
+    {
+        title: "Generating Configurations",
+        text: "Dipole, Quadrupole, Line, and Circle generate common charge layouts. Each opens a box where you can set the position, spacing, count, angle, charge, and whether the charges start locked."
+    },
+    {
+        title: "Visualizing & Probing the Field",
+        text: "Arrows show the electric field — adjust Normalize, Arrow Scale/Density, and colors to taste. Turn on Equipotential Lines to see contours of constant potential. Check Probe, then hover to read the field and potential at a point, or click to pin a sample that stays put."
+    }
+];
+
+let walkthroughStep = 0;
+
+/**
+ * Renders the current walkthrough step's content and nav state
+ */
+function showWalkthroughStep() {
+    const step = walkthroughSteps[walkthroughStep];
+
+    document.getElementById('walkthrough-title').textContent = step.title;
+    document.getElementById('walkthrough-text').textContent = step.text;
+    document.getElementById('walkthrough-progress').textContent = `${walkthroughStep + 1} / ${walkthroughSteps.length}`;
+    document.getElementById('walkthrough-back').style.display = walkthroughStep === 0 ? "none" : "flex";
+    document.querySelector('#walkthrough-next p').textContent = walkthroughStep === walkthroughSteps.length - 1 ? "Done" : "Next";
+}
+
+document.getElementById('walkthrough-button').addEventListener('click', () => {
+    walkthroughStep = 0;
+    showWalkthroughStep();
+    document.getElementById('walkthrough-box').style.visibility = "visible";
+});
+
+document.getElementById('walkthrough-close').addEventListener('click', () => {
+    document.getElementById('walkthrough-box').style.visibility = "hidden";
+});
+
+document.getElementById('walkthrough-back').addEventListener('click', () => {
+    if (walkthroughStep === 0) {
+        return;
+    }
+    walkthroughStep--;
+    showWalkthroughStep();
+});
+
+document.getElementById('walkthrough-next').addEventListener('click', () => {
+    if (walkthroughStep === walkthroughSteps.length - 1) {
+        document.getElementById('walkthrough-box').style.visibility = "hidden";
+        return;
+    }
+    walkthroughStep++;
+    showWalkthroughStep();
+});
+
+// Hint that the options panels scroll: shown near the top, faded out once
+// scrolled, and shown again if scrolled back up. Removed entirely if a panel
+// doesn't actually overflow
+document.querySelectorAll('.input-container').forEach((container) => {
+    const hint = container.querySelector('.scroll-hint');
+    if (!hint) {
+        return;
+    }
+
+    if (container.scrollHeight <= container.clientHeight) {
+        hint.remove();
+        return;
+    }
+
+    container.addEventListener('scroll', () => {
+        hint.classList.toggle('hidden', container.scrollTop > 4);
+    });
+
+    hint.addEventListener('click', () => {
+        container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
+    });
+});
+
 setInterval(appPeriodic, 10);
