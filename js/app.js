@@ -12,9 +12,9 @@
 import { FieldContainer } from "./components/Objects.js"
 import { Charge } from "./components/Charge.js";
 import { range } from "./util/arrays.js";
-import { drawGrid, drawVectorField, drawCharges } from "./util/plotting.js";
+import { drawGrid, drawVectorField, drawCharges, drawEquipotentialLines } from "./util/plotting.js";
 import { log, pixelsToCoords, light, coordsToPixels } from "./util/utilities.js";
-import { µ, electricField, updateCharges } from "./util/physics.js";
+import { µ, electricField, electricPotential, updateCharges } from "./util/physics.js";
 import { dipole, quadrupole, line, circle } from "./util/generation.js";
 
 export const fieldContainer = new FieldContainer('canvas');
@@ -25,7 +25,7 @@ const ctx = fieldContainer.ctx;
  * Periodic function that runs every tick and contains most drawing and calculation
  */
 function appPeriodic() {
-    const [timeScale, isNormalized, arrowScale, startColor, endColor, arrowDensity] = getInputs();
+    const [timeScale, isNormalized, arrowScale, startColor, endColor, arrowDensity, isEquipotential] = getInputs();
     const [step, xs, ys, scalar_xs, scalar_ys] = getGrid(arrowDensity);
 
     canvas.width = canvas.clientWidth;
@@ -38,6 +38,13 @@ function appPeriodic() {
     fieldContainer.dt = fieldContainer.dt == 0 ? 0 : parseFloat(timeScale);
 
     drawGrid(fieldContainer); // Draw the coordinate grid
+
+    if (isEquipotential) {
+        drawEquipotentialLines(fieldContainer, scalar_xs, scalar_ys,
+            (x, y) => electricPotential(fieldContainer, x, y), 8
+        ); // Draw the equipotential lines
+    }
+
     drawVectorField(fieldContainer, xs, ys, (x, y) => electricField(fieldContainer, x, y),
                     startColor, endColor, arrowScale * step, 0.15 * step,
                     isNormalized, true
@@ -65,11 +72,12 @@ function getInputs() {
     const startColor = document.getElementById('start-color').value;
     const endColor = document.getElementById('end-color').value;
     const arrowDensity = document.getElementById('arrow-density').value;
+    const isEquipotential = document.getElementById('equipotential-tick').checked;
     const time = document.getElementById('time');
 
     time.innerText = (fieldContainer.elapsedTime % 10).toFixed(2) + " s";
 
-    return [timeScale, isNormalized, arrowScale, startColor, endColor, arrowDensity];
+    return [timeScale, isNormalized, arrowScale, startColor, endColor, arrowDensity, isEquipotential];
 }
 
 /**
@@ -92,8 +100,8 @@ function getGrid(arrowDensity) {
     const step = gridSpacing / arrowDensity;
     const xs = range(min_x - step, max_x + step, step);
     const ys = range(min_y - step, max_y + step, step);
-    const scalar_xs = range(min_x - step, max_x + step, step/2);
-    const scalar_ys = range(min_y - step, max_y + step, step/2);
+    const scalar_xs = range(min_x - step, max_x + step, step/4);
+    const scalar_ys = range(min_y - step, max_y + step, step/4);
 
     return [step, xs, ys, scalar_xs, scalar_ys];
 }
@@ -216,22 +224,6 @@ document.getElementById('play-pause').addEventListener('click', () => {
     fieldContainer.dt = fieldContainer.dt !== 0 ? 0 : 1;
 });
 
-document.getElementById('dipole').addEventListener('click', () => {
-    dipole(fieldContainer);
-});
-
-document.getElementById('quadrupole').addEventListener('click', () => {
-    quadrupole(fieldContainer);
-});
-
-document.getElementById('line').addEventListener('click', () => {
-    line(fieldContainer);
-});
-
-document.getElementById('circle').addEventListener('click', () => {
-    circle(fieldContainer);
-});
-
 document.getElementById('accept').addEventListener('click', () => {
     const inputBox = document.getElementById('input-box');
     const inputValue1 = document.getElementById('input-value-1'); // Velocity X
@@ -245,10 +237,125 @@ document.getElementById('accept').addEventListener('click', () => {
     fieldContainer.editing.v_y = parseFloat(inputValue2.value);
     fieldContainer.editing.q = parseFloat(inputValue3.value)*µ;
     fieldContainer.editing.isLocked = inputValue4.checked;
+    fieldContainer.editing = null;
+});
+
+document.getElementById('delete-charge').addEventListener('click', () => {
+    fieldContainer.chargeList = fieldContainer.chargeList.filter((charge) => charge !== fieldContainer.editing);
+    fieldContainer.editing = null;
+    document.getElementById('input-box').style.visibility = "hidden";
 });
 
 document.getElementById('cancel').addEventListener('click', () => {
+    fieldContainer.editing = null;
     document.getElementById('input-box').style.visibility = "hidden";
+});
+
+/**
+ * Per-shape settings for the generation config box: the generator function,
+ * the default field values, the label for the reused "spacing" field, and
+ * whether the "count" field applies to this shape
+ *
+ * @type {object}
+ */
+const generationConfig = {
+    dipole: {
+        fn: dipole,
+        spacingLabel: "Separation",
+        showCount: false,
+        showAngle: true,
+        defaults: { centerX: 0, centerY: 0, count: 2, spacing: 2, angle: 0, charge: 100 }
+    },
+    quadrupole: {
+        fn: quadrupole,
+        spacingLabel: "Side Length",
+        showCount: false,
+        showAngle: true,
+        defaults: { centerX: 0, centerY: 0, count: 4, spacing: 2, angle: 0, charge: 100 }
+    },
+    line: {
+        fn: line,
+        spacingLabel: "Spacing",
+        showCount: true,
+        showAngle: true,
+        defaults: { centerX: 0, centerY: 0, count: 20, spacing: 0.5, angle: 0, charge: 100 }
+    },
+    circle: {
+        fn: circle,
+        spacingLabel: "Radius",
+        showCount: true,
+        showAngle: false,
+        defaults: { centerX: 0, centerY: 0, count: 32, spacing: 5, angle: 0, charge: 100 }
+    }
+};
+
+let pendingShape = null;
+
+/**
+ * Opens the generation config box, pre-filled with the defaults for a shape
+ *
+ * @param {string} shape - Key into generationConfig
+ */
+function showGenerationBox(shape) {
+    const config = generationConfig[shape];
+    pendingShape = shape;
+
+    document.getElementById('generation-value-1').value = config.defaults.centerX;
+    document.getElementById('generation-value-2').value = config.defaults.centerY;
+    document.getElementById('generation-value-3').value = config.defaults.count;
+    document.getElementById('generation-value-4').value = config.defaults.spacing;
+    document.getElementById('generation-value-5').value = config.defaults.angle;
+    document.getElementById('generation-value-6').value = config.defaults.charge;
+
+    document.getElementById('generation-label-spacing').innerText = config.spacingLabel;
+    document.getElementById('generation-row-count').style.display = config.showCount ? "flex" : "none";
+    document.getElementById('generation-row-angle').style.display = config.showAngle ? "flex" : "none";
+
+    document.getElementById('generation-box').style.visibility = "visible";
+}
+
+/**
+ * Maps the generic generation box fields onto the named options each
+ * generator function expects
+ *
+ * @param {string} shape - Key into generationConfig
+ * @param {object} fields - The raw {centerX, centerY, count, spacing, angle, charge} form values
+ * @returns {object} The options object for the corresponding generator function
+ */
+function mapGenerationOptions(shape, { centerX, centerY, count, spacing, angle, charge }) {
+    switch (shape) {
+        case 'dipole':
+        case 'quadrupole':
+            return { centerX, centerY, separation: spacing, angle, charge };
+        case 'line':
+            return { centerX, centerY, count, spacing, angle, charge };
+        case 'circle':
+            return { centerX, centerY, count, radius: spacing, angle, charge };
+    }
+}
+
+document.getElementById('dipole').addEventListener('click', () => showGenerationBox('dipole'));
+document.getElementById('quadrupole').addEventListener('click', () => showGenerationBox('quadrupole'));
+document.getElementById('line').addEventListener('click', () => showGenerationBox('line'));
+document.getElementById('circle').addEventListener('click', () => showGenerationBox('circle'));
+
+document.getElementById('generation-accept').addEventListener('click', () => {
+    const fields = {
+        centerX: parseFloat(document.getElementById('generation-value-1').value),
+        centerY: parseFloat(document.getElementById('generation-value-2').value),
+        count: parseInt(document.getElementById('generation-value-3').value),
+        spacing: parseFloat(document.getElementById('generation-value-4').value),
+        angle: parseFloat(document.getElementById('generation-value-5').value),
+        charge: parseFloat(document.getElementById('generation-value-6').value)
+    };
+
+    generationConfig[pendingShape].fn(fieldContainer, mapGenerationOptions(pendingShape, fields));
+
+    document.getElementById('generation-box').style.visibility = "hidden";
+});
+
+document.getElementById('generation-cancel').addEventListener('click', () => {
+    document.getElementById('generation-box').style.visibility = "hidden";
 });
 
 setInterval(appPeriodic, 10);

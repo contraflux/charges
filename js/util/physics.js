@@ -46,6 +46,33 @@ export function electricField(fieldContainer, x, y) {
 }
 
 /**
+ * Electric potential at a point, ignoring co-located charges
+ *
+ * @param {Fieldcontainer} fieldContainer - App container
+ * @param {float} x - The x coordinate
+ * @param {float} y - The y coordinate
+ * @returns {float} The electric potential
+ */
+export function electricPotential(fieldContainer, x, y) {
+    let V = 0;
+    const k = 8.99e9;
+
+    for (const charge of fieldContainer.chargeList) {
+        const dx = x - charge.x;
+        const dy = y - charge.y;
+        const r = Math.hypot(dx, dy);
+
+        if (r === 0) {
+            continue;
+        }
+
+        V += k * charge.q / r;
+    }
+
+    return V;
+}
+
+/**
  * Electric force on a charge at a point
  *
  * @param {Fieldcontainer} fieldContainer - App container

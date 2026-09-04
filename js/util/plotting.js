@@ -162,6 +162,145 @@ export function drawVectorField(fieldContainer, xs, ys, func, start_color, end_c
 }
 
 /**
+ * Picks log-spaced contour levels from a scalar field's magnitude
+ * distribution, mirrored across zero to cover both signs
+ *
+ * @param {array} values - Flat array of scalar field samples
+ * @param {int} count - Number of positive (and mirrored negative) levels
+ * @returns {array} Contour levels
+ */
+function getContourLevels(values, count) {
+    const magnitudes = values
+        .filter((v) => isFinite(v) && v !== 0)
+        .map((v) => Math.abs(v))
+        .sort((a, b) => a - b);
+
+    if (magnitudes.length === 0) {
+        return [];
+    }
+
+    const minMag = magnitudes[Math.floor(magnitudes.length * 0.05)];
+    const maxMag = magnitudes[Math.floor(magnitudes.length * 0.95)];
+
+    if (!(minMag > 0) || !(maxMag > minMag)) {
+        return [];
+    }
+
+    const logMin = Math.log10(minMag);
+    const logMax = Math.log10(maxMag);
+
+    let levels = [];
+    for (let i = 0; i < count; i++) {
+        const mag = Math.pow(10, logMin + ((i / (count - 1)) * (logMax - logMin)));
+        levels.push(mag, -mag);
+    }
+
+    return levels;
+}
+
+/**
+ * Finds the line segments where a scalar field crosses a given level, using
+ * marching squares with linear interpolation along cell edges
+ *
+ * @param {array} xs - The x coordinates of the grid
+ * @param {array} ys - The y coordinates of the grid
+ * @param {array} grid - 2D array of scalar values, grid[i][j] at (xs[i], ys[j])
+ * @param {float} level - The contour level
+ * @returns {array} Array of [[x1, y1], [x2, y2]] segments in world coordinates
+ */
+function marchingSquares(xs, ys, grid, level) {
+    const segments = [];
+
+    // Linear interpolation between two grid points that straddle the level
+    const interp = (pA, vA, pB, vB) => vB === vA ? (pA + pB) / 2 : pA + ((pB - pA) * (level - vA) / (vB - vA));
+
+    for (let i = 0; i < xs.length - 1; i++) {
+        for (let j = 0; j < ys.length - 1; j++) {
+            const x0 = xs[i];
+            const x1 = xs[i + 1];
+            const y0 = ys[j];
+            const y1 = ys[j + 1];
+
+            const v00 = grid[i][j];
+            const v10 = grid[i + 1][j];
+            const v11 = grid[i + 1][j + 1];
+            const v01 = grid[i][j + 1];
+
+            if (!isFinite(v00) || !isFinite(v10) || !isFinite(v11) || !isFinite(v01)) {
+                continue;
+            }
+
+            // Bitmask of which corners are above the level (bottom-left, bottom-right, top-right, top-left)
+            let caseIndex = 0;
+            if (v00 > level) caseIndex |= 1;
+            if (v10 > level) caseIndex |= 2;
+            if (v11 > level) caseIndex |= 4;
+            if (v01 > level) caseIndex |= 8;
+
+            if (caseIndex === 0 || caseIndex === 15) {
+                continue;
+            }
+
+            const bottom = [interp(x0, v00, x1, v10), y0];
+            const right = [x1, interp(y0, v10, y1, v11)];
+            const top = [interp(x0, v01, x1, v11), y1];
+            const left = [x0, interp(y0, v00, y1, v01)];
+
+            // Standard marching squares edge table; cases 5 and 10 are the ambiguous
+            // saddle cases, resolved here to a fixed pair of segments
+            switch (caseIndex) {
+                case 1: case 14: segments.push([left, bottom]); break;
+                case 2: case 13: segments.push([bottom, right]); break;
+                case 3: case 12: segments.push([left, right]); break;
+                case 4: case 11: segments.push([right, top]); break;
+                case 6: case 9: segments.push([bottom, top]); break;
+                case 7: case 8: segments.push([left, top]); break;
+                case 5: segments.push([left, top], [bottom, right]); break;
+                case 10: segments.push([left, bottom], [right, top]); break;
+            }
+        }
+    }
+
+    return segments;
+}
+
+/**
+ * Draws equipotential lines for a scalar field, colored by the sign of the
+ * potential (red for positive, blue for negative)
+ *
+ * @param {FieldContainer} fieldContainer - The app container
+ * @param {array} xs - The x coordinates of the grid
+ * @param {array} ys - The y coordinates of the grid
+ * @param {function} func - The scalar field, called as func(x, y)
+ * @param {int} levelCount - Number of positive (and mirrored negative) contour levels
+ */
+export function drawEquipotentialLines(fieldContainer, xs, ys, func, levelCount) {
+    const ctx = fieldContainer.ctx;
+
+    const grid = xs.map((x) => ys.map((y) => func(x, y)));
+    const levels = getContourLevels(grid.flat(), levelCount);
+
+    for (const level of levels) {
+        const segments = marchingSquares(xs, ys, grid, level);
+        if (segments.length === 0) {
+            continue;
+        }
+
+        ctx.strokeStyle = level > 0 ? "rgba(255, 110, 110, 0.6)" : "rgba(110, 150, 255, 0.6)";
+        ctx.lineWidth = 1;
+
+        ctx.beginPath();
+        for (const [[x1, y1], [x2, y2]] of segments) {
+            const [w1, h1] = coordsToPixels(x1, y1);
+            const [w2, h2] = coordsToPixels(x2, y2);
+            ctx.moveTo(w1, h1);
+            ctx.lineTo(w2, h2);
+        }
+        ctx.stroke();
+    }
+}
+
+/**
  * Draws individual point charges
  *
  * @param {FieldContainer} fieldContainer - The app container

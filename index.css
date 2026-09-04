@@ -201,7 +201,7 @@ body {
     position: relative;
     bottom: -5px;
     margin: auto;
-    width: 200px; height: 45px;
+    width: 260px; height: 45px;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -209,7 +209,7 @@ body {
 
 .input-box-button {
     position: relative;
-    width: 90px; height: 30px;
+    width: 75px; height: 30px;
     color: var(--primary);
     background-color: var(--surface);
     box-sizing: border-box;
@@ -223,4 +223,50 @@ body {
 
 .input-box-button:hover {
     background-color: var(--accent-dim);
+}
+
+.generation-box {
+    visibility: hidden;
+    position: absolute;
+    top: calc(120px + 250px - 130px); left: calc(50% - 150px);
+    box-sizing: border-box;
+    border-radius: 25px;
+    background-color: var(--surface);
+    border: 1px solid var(--border);
+    width: 300px;
+    padding: 15px 0 20px 0;
+}
+
+.generation-box-entry {
+    margin: 0 auto 10px auto;
+    width: 260px; height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.generation-box-entry>h3 {
+    margin: 0;
+    font-size: 16px;
+    color: var(--primary);
+}
+
+.generation-box-entry>input {
+    width: 110px;
+    color-scheme: dark;
+    color: var(--primary);
+    background-color: var(--surface);
+    border-width: 1px;
+    border-color: var(--border);
+    border-style: solid;
+    border-radius: 10px;
+    box-sizing: border-box;
+}
+
+.generation-box-bottom {
+    margin: 10px auto 0 auto;
+    width: 170px; height: 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }

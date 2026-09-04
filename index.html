@@ -68,8 +68,12 @@
             <h3>Arrow Density</h3>
             <input type="range" id="arrow-density" min="1" max="5" value="2">
         </div>
+        <div class="container-row">
+            <h3>Equipotential Lines</h3>
+            <input type="checkbox" id="equipotential-tick">
+        </div>
     </div>
-    
+
     <canvas class="canvas" id="canvas"></canvas>
 
     <div class="time-box">
@@ -98,7 +102,46 @@
             <div class="input-box-button" id="accept">
                  <p>Accept</p>
             </div>
+            <div class="input-box-button" id="delete-charge">
+                 <p>Delete</p>
+            </div>
             <div class="input-box-button" id="cancel">
+                 <p>Cancel</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="generation-box" id="generation-box">
+        <div class="generation-box-entry">
+            <h3>Center X</h3>
+            <input id="generation-value-1" type="number" value="0" step="0.1">
+        </div>
+        <div class="generation-box-entry">
+            <h3>Center Y</h3>
+            <input id="generation-value-2" type="number" value="0" step="0.1">
+        </div>
+        <div class="generation-box-entry" id="generation-row-count">
+            <h3 id="generation-label-count">Count</h3>
+            <input id="generation-value-3" type="number" value="4" min="1" step="1">
+        </div>
+        <div class="generation-box-entry">
+            <h3 id="generation-label-spacing">Spacing</h3>
+            <input id="generation-value-4" type="number" value="1" step="0.1">
+        </div>
+        <div class="generation-box-entry" id="generation-row-angle">
+            <h3>Angle (deg)</h3>
+            <input id="generation-value-5" type="number" value="0" step="1">
+        </div>
+        <div class="generation-box-entry">
+            <h3>Charge (µC)</h3>
+            <input id="generation-value-6" type="number" value="100" step="1">
+        </div>
+
+        <div class="generation-box-bottom">
+            <div class="input-box-button" id="generation-accept">
+                 <p>Accept</p>
+            </div>
+            <div class="input-box-button" id="generation-cancel">
                  <p>Cancel</p>
             </div>
         </div>
