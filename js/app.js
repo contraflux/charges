@@ -11,11 +11,11 @@
 
 import { FieldContainer } from "./components/Objects.js"
 import { Charge } from "./components/Charge.js";
-import { divergence, curl } from "./util/math.js"
 import { range } from "./util/arrays.js";
-import { drawGrid, drawScalarField, drawVectorField, drawCharges } from "./util/plotting.js";
+import { drawGrid, drawVectorField, drawCharges } from "./util/plotting.js";
 import { log, pixelsToCoords, light, coordsToPixels } from "./util/utilities.js";
-import { electricField, updateCharges } from "./util/physics.js";
+import { µ, electricField, updateCharges } from "./util/physics.js";
+import { dipole, quadrupole, line, circle } from "./util/generation.js";
 
 export const fieldContainer = new FieldContainer('canvas');
 const canvas = fieldContainer.canvas;
@@ -28,6 +28,8 @@ function appPeriodic() {
     const [timeScale, isNormalized, arrowScale, startColor, endColor, arrowDensity] = getInputs();
     const [step, xs, ys, scalar_xs, scalar_ys] = getGrid(arrowDensity);
 
+    canvas.width = canvas.clientWidth;
+    canvas.height = canvas.clientHeight;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = light;
     ctx.strokeStyle = light;
@@ -35,18 +37,6 @@ function appPeriodic() {
 
     fieldContainer.dt = fieldContainer.dt == 0 ? 0 : parseFloat(timeScale);
 
-    // Draw the scalar field if it is selected
-    if (fieldContainer.overlay == "div") {
-        drawScalarField(fieldContainer, scalar_xs, scalar_ys,
-                        (x, y) => electricField(fieldContainer, x, y),
-                        divergence, "#000000", "#ffffff"
-        ); // Draw divergence
-    } else if (fieldContainer.overlay == "curl") {
-        drawScalarField(fieldContainer, scalar_xs, scalar_ys,
-                        (x, y) => electricField(fieldContainer, x, y),
-                        curl, "#000000", "#ffffff"
-        ); // Draw curl
-    }
     drawGrid(fieldContainer); // Draw the coordinate grid
     drawVectorField(fieldContainer, xs, ys, (x, y) => electricField(fieldContainer, x, y),
                     startColor, endColor, arrowScale * step, 0.15 * step,
@@ -59,7 +49,6 @@ function appPeriodic() {
         updateCharges(fieldContainer);
     }
 
-
     fieldContainer.elapsedTime += fieldContainer.dt;
 }
 
@@ -70,17 +59,15 @@ function appPeriodic() {
  *                  fields, and the grid for scalar fields
  */
 function getInputs() {
-    const timeScale = Math.pow(10, document.getElementById('time-scale').value - 7); // Log scale from 1e-7 to 1e-5
+    const timeScale = Math.pow(10, document.getElementById('time-scale').value - 3); // Log scale from 1e-1 to 1e+1
     const isNormalized = document.getElementById('normalize-tick').checked;
     const arrowScale = document.getElementById('arrow-scale').value;
     const startColor = document.getElementById('start-color').value;
     const endColor = document.getElementById('end-color').value;
     const arrowDensity = document.getElementById('arrow-density').value;
-    const overlay = document.getElementById('overlay').value;
     const time = document.getElementById('time');
 
-    fieldContainer.overlay = overlay;
-    time.innerText = ((fieldContainer.elapsedTime * 1e3) % 10).toFixed(3) + " ms";
+    time.innerText = (fieldContainer.elapsedTime % 10).toFixed(2) + " s";
 
     return [timeScale, isNormalized, arrowScale, startColor, endColor, arrowDensity];
 }
@@ -194,9 +181,9 @@ function showInputBox(charge) {
 
     inputBox.style.visibility = "visible";
 
-    inputValue1.value = charge.v_x;
-    inputValue2.value = charge.v_y;
-    inputValue3.value = charge.q;
+    inputValue1.value = charge.v_x.toFixed(2);
+    inputValue2.value = charge.v_y.toFixed(2);
+    inputValue3.value = charge.q/µ;
     inputValue4.checked = charge.isLocked;
 
     fieldContainer.editing = charge;
@@ -213,19 +200,36 @@ document.addEventListener('keypress', (e) => {
 });
 
 document.getElementById('add-positive-charge').addEventListener('click', () => {
-    fieldContainer.chargeList.push(new Charge((Math.random() - 0.5) * 10, (Math.random() - 0.5) * 10, 0, 0, 1));
+    fieldContainer.chargeList.push(new Charge((Math.random() - 0.5) * 5, (Math.random() - 0.5) * 5, 0, 0, 100*µ));
 });
 
 document.getElementById('add-negative-charge').addEventListener('click', () => {
-    fieldContainer.chargeList.push(new Charge((Math.random() - 0.5) * 10, (Math.random() - 0.5) * 10, 0, 0, -1));
+    fieldContainer.chargeList.push(new Charge((Math.random() - 0.5) * 5, (Math.random() - 0.5) * 5, 0, 0, -100*µ));
 });
 
 document.getElementById('restart').addEventListener('click', () => {
     fieldContainer.chargeList = [];
+    fieldContainer.elapsedTime = 0;
 });
 
 document.getElementById('play-pause').addEventListener('click', () => {
     fieldContainer.dt = fieldContainer.dt !== 0 ? 0 : 1;
+});
+
+document.getElementById('dipole').addEventListener('click', () => {
+    dipole(fieldContainer);
+});
+
+document.getElementById('quadrupole').addEventListener('click', () => {
+    quadrupole(fieldContainer);
+});
+
+document.getElementById('line').addEventListener('click', () => {
+    line(fieldContainer);
+});
+
+document.getElementById('circle').addEventListener('click', () => {
+    circle(fieldContainer);
 });
 
 document.getElementById('accept').addEventListener('click', () => {
@@ -239,7 +243,7 @@ document.getElementById('accept').addEventListener('click', () => {
 
     fieldContainer.editing.v_x = parseFloat(inputValue1.value);
     fieldContainer.editing.v_y = parseFloat(inputValue2.value);
-    fieldContainer.editing.q = parseFloat(inputValue3.value);
+    fieldContainer.editing.q = parseFloat(inputValue3.value)*µ;
     fieldContainer.editing.isLocked = inputValue4.checked;
 });
 

@@ -5,12 +5,11 @@
     <meta charset="UTF-8">
     <title>Vector Fields</title>
     <link rel="stylesheet" href="index.css">
-    <script src="index.js" defer></script>
     <script type="module" src="js/app.js" defer></script>
 </head>
 
 <body>
-    <div class="option-container">
+    <div class="input-container">
         <div class="container-row">
             <div class="action-button" id="add-positive-charge">
                 <h3 style="margin-top: 2px">+</h3>
@@ -29,47 +28,49 @@
             <h3>Time Step</h3>
             <input type="range" id="time-scale" min="0" max="2" value="1" step="0.01">
         </div>
+        <div class="container-row">
+            <div class="action-button" id="dipole">
+                <p>Dipole</p>
+            </div>
+            <div class="action-button" id="quadrupole">
+                <p>Quadrupole</p>
+            </div>
+            <div class="action-button" id="line">
+                <p>Line</p>
+            </div>
+            <div class="action-button" id="circle">
+                <p>Circle</p>
+            </div>
+        </div>
     </div>
 
     <div class="color-container">
         <div class="container-row">
             <h3>Start Color</h3>
-            <input type="color" id="start-color" value="#ff2a22">
+            <input type="color" id="start-color" value="#000000">
         </div>
         <div class="container-row">
             <h3>End Color</h3>
-            <input type="color" id="end-color" value="#219ebc">
+            <input type="color" id="end-color" value="#ffffff">
         </div>
     </div>
 
     <div class="input-container">
-        <div class="scroll-bar-track"></div>
-        <div class="scroll-bar" id="scroll-bar"></div>
-        <div class="scroll" id="scroll">
-            <div class="container-row" id="top-container">
-                <h3>Normalize</h3>
-                <input type="checkbox" id="normalize-tick" checked="true">
-            </div>
-            <div class="container-row">
-                <h3>Overlay</h3>
-                <select name="Overlay" id="overlay">
-                    <option value="none">None</option>
-                    <option value="div">Divergence</option>
-                    <option value="curl">Curl</option>
-                </select>
-            </div>
-            <div class="container-row">
-                <h3>Arrow Scale</h3>
-                <input type="range" id="arrow-scale" min="1e-3" max="1" value="0.5" step="1e-4">
-            </div>
-            <div class="container-row">
-                <h3>Arrow Density</h3>
-                <input type="range" id="arrow-density" min="1" max="5" value="2">
-            </div>
+        <div class="container-row" id="top-container">
+            <h3>Normalize</h3>
+            <input type="checkbox" id="normalize-tick" checked="true">
+        </div>
+        <div class="container-row">
+            <h3>Arrow Scale</h3>
+            <input type="range" id="arrow-scale" min="1e-3" max="1" value="0.5" step="1e-4">
+        </div>
+        <div class="container-row">
+            <h3>Arrow Density</h3>
+            <input type="range" id="arrow-density" min="1" max="5" value="2">
         </div>
     </div>
     
-    <canvas class="canvas" id="canvas" width="900" height="500"></canvas>
+    <canvas class="canvas" id="canvas"></canvas>
 
     <div class="time-box">
         <h3 id="time">Time</h3>
@@ -77,15 +78,15 @@
 
     <div class="input-box" id="input-box">
         <div class="input-box-entry">
-            <h3 id="input-entry-1">Velocity X</h3>
+            <h3 id="input-entry-1">X Velocity (m/s)</h3>
             <input id="input-value-1" type="number" value="1" min="0">
         </div>
         <div class="input-box-entry">
-            <h3 id="input-entry-2">Velocity Y</h3>
+            <h3 id="input-entry-2">Y Velocity (m/s)</h3>
             <input id="input-value-2" type="number" value="1" min="0">
         </div>
         <div class="input-box-entry">
-            <h3 id="input-entry-3">Charge</h3>
+            <h3 id="input-entry-3">Charge (µC)</h3>
             <input id="input-value-3" type="number" value="1" min="0">
         </div>
         <div class="input-box-entry">

@@ -10,6 +10,8 @@
 
 import { rk4Step } from "./math.js";
 
+export const µ = 1e-6
+
 /**
  * Electric field at a point, ignoring co-located charges
  *

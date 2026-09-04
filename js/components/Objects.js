@@ -25,7 +25,6 @@ export class FieldContainer extends Container {
         this.mouseOffsetX = 0;
         this.mouseOffsetY = 0;
         this.zoomSpeed = 2e-3;
-        this.overlay = "none";
         this.chargeList = [];
         this.dt = 0;
         this.elapsedTime = 0;
@@ -41,7 +40,6 @@ export class FieldContainer extends Container {
         this.mouseOffsetX = 0;
         this.mouseOffsetY = 0;
         this.initialLocations = [];
-        this.overlay = "none";
         this.elapsedTime = 0;
     }
 

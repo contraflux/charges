@@ -67,65 +67,6 @@ export function drawGrid(fieldContainer) {
 }
 
 /**
- * Draws a heatmap reperesenting a scalar field
- *
- * @param {FieldContainer} fieldContainer - The app container
- * @param {array} xs - The x coordinates of the grid
- * @param {array} ys - The y coordinates of the grid
- * @param {function} func - The function to be operated on
- * @param {function} operator - The operator to evaluate on the function
- * @param {stirng} start_color - Color of the minimum value in hex
- * @param {string} end_color - Color of the maximum value in hex
- */
-export function drawScalarField(fieldContainer, xs, ys, func, operator, start_color, end_color) {
-    const ctx = fieldContainer.ctx;
-
-    const dx = xs[1] - xs[0];
-    const dy = ys[1] - ys[0];
-    let scalarField = [];
-    let colors = []
-
-    // Collect the values of the field at the grid points
-    for (const x of xs) {
-        for (const y of ys) {
-            scalarField.push(operator(func, x + dx/2, y + dy/2)); // Evaluate at the midpoint of two grid points
-        }
-    }
-
-    // Assign each value to a color in the color range
-    const max = Math.max(...scalarField);
-    const min = Math.min(...scalarField);
-    for (const value of scalarField) {
-        const rgb = colorLerp(start_color, end_color, map(min, max, value));
-        colors.push(`rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 1)`)
-    }
-
-    // Loop through the grid points a draw the heatmap
-    xs.forEach((x, x_index) => {
-        ys.forEach((y, y_index) => {
-            const index = (x_index * ys.length) + y_index;
-
-            // Rectangle grid positions
-            const [width_start, height_start] = coordsToPixels(x, y);
-            const [width_end, height_end] = coordsToPixels(x + dx, y + dy);
-
-            // Rectange dimensions (expand slightly to fix boundary fighting)
-            const rect_width = (width_end - width_start) * 1.1;
-            const rect_height = (height_end - height_start) * 1.1;
-
-            ctx.fillStyle = colors[index];
-            ctx.lineWidth = 0;
-            ctx.save();
-            ctx.translate(width_start, height_start);
-            ctx.beginPath();
-            ctx.rect(0, 0, rect_width, rect_height);
-            ctx.fill();
-            ctx.restore();
-        });
-    });
-}
-
-/**
  * Draws a vector field from an array of vectors
  *
  * @param {FieldContainer} fieldContainer - The app container
