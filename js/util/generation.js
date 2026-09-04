@@ -31,7 +31,7 @@ function rotate(x, y, angleRad) {
  * @param {FieldContainer} fieldContainer - App container
  * @param {object} options - centerX, centerY, separation, angle (deg), charge (µC)
  */
-export function dipole(fieldContainer, { centerX = 0, centerY = 0, separation = 2, angle = 0, charge = 100 } = {}) {
+export function dipole(fieldContainer, { centerX = 0, centerY = 0, separation = 2, angle = 0, charge = 100, locked = false } = {}) {
     const angleRad = angle * Math.PI / 180;
     const half = separation / 2;
 
@@ -42,6 +42,9 @@ export function dipole(fieldContainer, { centerX = 0, centerY = 0, separation = 
         new Charge(centerX + dx1, centerY + dy1, 0, 0, charge * µ),
         new Charge(centerX + dx2, centerY + dy2, 0, 0, -charge * µ)
     ]
+    for (const pc of charges) {
+        pc.isLocked = locked;
+    }
     fieldContainer.chargeList.push(...charges);
 }
 
@@ -51,7 +54,7 @@ export function dipole(fieldContainer, { centerX = 0, centerY = 0, separation = 
  * @param {FieldContainer} fieldContainer - App container
  * @param {object} options - centerX, centerY, separation (side length), angle (deg), charge (µC)
  */
-export function quadrupole(fieldContainer, { centerX = 0, centerY = 0, separation = 2, angle = 0, charge = 100 } = {}) {
+export function quadrupole(fieldContainer, { centerX = 0, centerY = 0, separation = 2, angle = 0, charge = 100, locked = false } = {}) {
     const angleRad = angle * Math.PI / 180;
     const half = separation / 2;
     const corners = [[-half, half, 1], [half, half, -1], [half, -half, 1], [-half, -half, -1]];
@@ -60,6 +63,9 @@ export function quadrupole(fieldContainer, { centerX = 0, centerY = 0, separatio
         const [dx, dy] = rotate(x, y, angleRad);
         return new Charge(centerX + dx, centerY + dy, 0, 0, sign * charge * µ);
     });
+    for (const pc of charges) {
+        pc.isLocked = locked;
+    }
     fieldContainer.chargeList.push(...charges);
 }
 
@@ -70,7 +76,7 @@ export function quadrupole(fieldContainer, { centerX = 0, centerY = 0, separatio
  * @param {FieldContainer} fieldContainer - App container
  * @param {object} options - centerX, centerY, count, spacing, angle (deg), charge (µC)
  */
-export function line(fieldContainer, { centerX = 0, centerY = 0, count = 20, spacing = 0.5, angle = 0, charge = 100 } = {}) {
+export function line(fieldContainer, { centerX = 0, centerY = 0, count = 20, spacing = 0.5, angle = 0, charge = 100, locked = false } = {}) {
     const angleRad = angle * Math.PI / 180;
     const totalLength = spacing * (count - 1);
     let charges = [];
@@ -79,6 +85,9 @@ export function line(fieldContainer, { centerX = 0, centerY = 0, count = 20, spa
         const offset = (i * spacing) - (totalLength / 2);
         const [dx, dy] = rotate(0, offset, angleRad);
         charges.push(new Charge(centerX + dx, centerY + dy, 0, 0, charge * µ));
+    }
+    for (const pc of charges) {
+        pc.isLocked = locked;
     }
     fieldContainer.chargeList.push(...charges);
 }
@@ -89,13 +98,16 @@ export function line(fieldContainer, { centerX = 0, centerY = 0, count = 20, spa
  * @param {FieldContainer} fieldContainer - App container
  * @param {object} options - centerX, centerY, count, radius, angle (deg, starting offset), charge (µC)
  */
-export function circle(fieldContainer, { centerX = 0, centerY = 0, count = 32, radius = 5, angle = 0, charge = 100 } = {}) {
+export function circle(fieldContainer, { centerX = 0, centerY = 0, count = 32, radius = 5, angle = 0, charge = 100, locked = false } = {}) {
     const angleRad = angle * Math.PI / 180;
     let charges = [];
 
     for (let i = 0; i < count; i++) {
         const theta = (2 * Math.PI * i / count) + angleRad;
         charges.push(new Charge(centerX + (radius * Math.cos(theta)), centerY + (radius * Math.sin(theta)), 0, 0, charge * µ));
+    }
+    for (const pc of charges) {
+        pc.isLocked = locked;
     }
     fieldContainer.chargeList.push(...charges);
 }

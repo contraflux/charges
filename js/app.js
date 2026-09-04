@@ -387,7 +387,11 @@ function showInputBox(charge) {
 function validateInputs(pairs) {
     let valid = true;
 
-    for (const [input, value] of pairs) {
+    for (let i = 0; i < pairs.length; i++) {
+        const [input, value] = pairs[i]
+        if (input.type == 'checkbox') {
+            continue;
+        }
         if (isFinite(value)) {
             input.classList.remove('input-error');
         } else {
@@ -407,7 +411,11 @@ canvas.addEventListener('wheel', (e) => fieldContainer.zoomGrid(e));
 canvas.addEventListener('dblclick', (e) => { editProperties(e) });
 
 document.addEventListener('keypress', (e) => {
-    if (e.key == 'r') fieldContainer.resetFields();
+    if (e.key == 'r') {
+        fieldContainer.resetFields();
+        fieldContainer.dt = 0;
+        document.getElementById('input-box').style.visibility = "hidden";
+    }
 });
 
 document.addEventListener('keydown', (e) => {
@@ -436,6 +444,7 @@ document.getElementById('add-negative-charge').addEventListener('click', () => {
 
 document.getElementById('restart').addEventListener('click', () => {
     fieldContainer.resetFields();
+    fieldContainer.dt = 0;
     document.getElementById('input-box').style.visibility = "hidden";
 });
 
@@ -491,28 +500,28 @@ const generationConfig = {
         spacingLabel: "Separation",
         showCount: false,
         showAngle: true,
-        defaults: { centerX: 0, centerY: 0, count: 2, spacing: 2, angle: 0, charge: 100 }
+        defaults: { centerX: 0, centerY: 0, count: 2, spacing: 2, angle: 0, charge: 100, locked: false }
     },
     quadrupole: {
         fn: quadrupole,
         spacingLabel: "Side Length",
         showCount: false,
         showAngle: true,
-        defaults: { centerX: 0, centerY: 0, count: 4, spacing: 2, angle: 0, charge: 100 }
+        defaults: { centerX: 0, centerY: 0, count: 4, spacing: 2, angle: 0, charge: 100, locked: false }
     },
     line: {
         fn: line,
         spacingLabel: "Spacing",
         showCount: true,
         showAngle: true,
-        defaults: { centerX: 0, centerY: 0, count: 20, spacing: 0.5, angle: 0, charge: 100 }
+        defaults: { centerX: 0, centerY: 0, count: 20, spacing: 0.5, angle: 0, charge: 100, locked: false }
     },
     circle: {
         fn: circle,
         spacingLabel: "Radius",
         showCount: true,
         showAngle: false,
-        defaults: { centerX: 0, centerY: 0, count: 32, spacing: 5, angle: 0, charge: 100 }
+        defaults: { centerX: 0, centerY: 0, count: 32, spacing: 5, angle: 0, charge: 100, locked: false }
     }
 };
 
@@ -533,12 +542,13 @@ function showGenerationBox(shape) {
     document.getElementById('generation-value-4').value = config.defaults.spacing;
     document.getElementById('generation-value-5').value = config.defaults.angle;
     document.getElementById('generation-value-6').value = config.defaults.charge;
+    document.getElementById('generation-value-7').checked = config.defaults.locked;
 
     document.getElementById('generation-label-spacing').innerText = config.spacingLabel;
     document.getElementById('generation-row-count').style.display = config.showCount ? "flex" : "none";
     document.getElementById('generation-row-angle').style.display = config.showAngle ? "flex" : "none";
 
-    for (let i = 1; i <= 6; i++) {
+    for (let i = 1; i <= 7; i++) {
         document.getElementById(`generation-value-${i}`).classList.remove('input-error');
     }
 
@@ -553,15 +563,15 @@ function showGenerationBox(shape) {
  * @param {object} fields - The raw {centerX, centerY, count, spacing, angle, charge} form values
  * @returns {object} The options object for the corresponding generator function
  */
-function mapGenerationOptions(shape, { centerX, centerY, count, spacing, angle, charge }) {
+function mapGenerationOptions(shape, { centerX, centerY, count, spacing, angle, charge, locked }) {
     switch (shape) {
         case 'dipole':
         case 'quadrupole':
-            return { centerX, centerY, separation: spacing, angle, charge };
+            return { centerX, centerY, separation: spacing, angle, charge, locked };
         case 'line':
-            return { centerX, centerY, count, spacing, angle, charge };
+            return { centerX, centerY, count, spacing, angle, charge, locked };
         case 'circle':
-            return { centerX, centerY, count, radius: spacing, angle, charge };
+            return { centerX, centerY, count, radius: spacing, angle, charge, locked };
     }
 }
 
@@ -571,8 +581,8 @@ document.getElementById('line').addEventListener('click', () => showGenerationBo
 document.getElementById('circle').addEventListener('click', () => showGenerationBox('circle'));
 
 document.getElementById('generation-accept').addEventListener('click', () => {
-    const inputs = [1, 2, 3, 4, 5, 6].map((i) => document.getElementById(`generation-value-${i}`));
-    const [input1, input2, input3, input4, input5, input6] = inputs;
+    const inputs = [1, 2, 3, 4, 5, 6, 7].map((i) => document.getElementById(`generation-value-${i}`));
+    const [input1, input2, input3, input4, input5, input6, input7] = inputs;
 
     const fields = {
         centerX: parseFloat(input1.value),
@@ -580,11 +590,12 @@ document.getElementById('generation-accept').addEventListener('click', () => {
         count: parseInt(input3.value),
         spacing: parseFloat(input4.value),
         angle: parseFloat(input5.value),
-        charge: parseFloat(input6.value)
+        charge: parseFloat(input6.value),
+        locked: input7.checked
     };
 
     const config = generationConfig[pendingShape];
-    const pairs = [[input1, fields.centerX], [input2, fields.centerY], [input4, fields.spacing], [input5, fields.angle], [input6, fields.charge]];
+    const pairs = [[input1, fields.centerX], [input2, fields.centerY], [input4, fields.spacing], [input5, fields.angle], [input6, fields.charge], [input7, fields.locked]];
     if (config.showCount) {
         pairs.push([input3, fields.count]);
     }
